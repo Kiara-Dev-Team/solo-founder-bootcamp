@@ -85,7 +85,7 @@ When adding a resource:
    # Run locally
    docsify serve .
    
-   # Open http://localhost:3000
+   # Open http://localhost:3000 in your browser
    ```
 
 5. **Commit your changes**
@@ -217,7 +217,7 @@ npm i docsify-cli -g
 cd awesome-y-combinator
 docsify serve .
 
-# Open http://localhost:3000
+# Open http://localhost:3000 in your browser
 ```
 
 **Making Changes:**
