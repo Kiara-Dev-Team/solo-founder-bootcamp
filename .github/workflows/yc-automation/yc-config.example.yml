@@ -1,0 +1,110 @@
+# YC Automation Configuration
+
+# Startup Information
+startup:
+  name: "My Awesome Startup"
+  batch: "Solo"  # or "W24", "S23", etc.
+  stage: "pre-seed"  # pre-seed, seed, series-a
+  founded: "2024-01-01"
+  
+# Which features to enable
+features:
+  weekly_checkin: true
+  partner_advice: true
+  metrics_tracking: true
+  demo_day_prep: false  # Enable when you have a target launch date
+  
+# Metrics Configuration
+metrics:
+  # What to track
+  track_users: true
+  track_revenue: true
+  track_deployments: true
+  track_conversations: true
+  
+  # Your key metric (focus on ONE)
+  primary_metric: "WAU"  # WAU, MRR, DAU, retention, etc.
+  
+  # Growth targets
+  weekly_growth_target: 0.07  # 7% weekly growth
+  monthly_growth_target: 0.20  # 20% monthly growth
+  
+# Schedule (all times in UTC)
+schedule:
+  weekly_checkin: "MON 09:00"
+  metrics_review: "FRI 17:00"
+  demo_day_prep: "MON 10:00"
+  
+# Advice thresholds (customize for your stage)
+advice:
+  min_commits_per_week: 5
+  min_user_conversations_per_week: 5
+  max_open_prs: 5
+  
+  # When to alert
+  alert_on_negative_growth: true
+  alert_on_stagnant_growth: true  # < 5% weekly
+  alert_on_low_activity: true
+  
+# Demo Day / Launch Settings (optional)
+demo_day:
+  enabled: false
+  target_date: ""  # YYYY-MM-DD format
+  weeks_notice: 12  # Start prep this many weeks before
+  
+# Notifications (optional)
+notifications:
+  # Slack webhook for notifications
+  slack_webhook_secret: ""  # Reference to GitHub secret
+  
+  # Email notifications (uses GitHub's email)
+  email_notifications: true
+  
+  # What to notify about
+  notify_weekly_checkin: true
+  notify_critical_alerts: true
+  notify_advice: false
+  notify_milestones: true
+
+# Custom Advice Rules (advanced)
+custom_advice:
+  - name: "Shipping Too Slow"
+    condition: "commits_per_week < 10"
+    message: "Ship faster! Aim for daily commits and deploys."
+    priority: "high"
+    
+  - name: "Not Talking to Users"
+    condition: "user_conversations < 3"
+    message: "You're not talking to enough users. YC recommends 5+ per week."
+    priority: "critical"
+    
+  - name: "Great Momentum"
+    condition: "user_growth_rate > 0.15"
+    message: "Strong growth! Keep doing what's working."
+    priority: "info"
+
+# Repository Settings
+repository:
+  # Branch to run workflows on
+  main_branch: "main"
+  
+  # Labels to auto-create
+  auto_labels:
+    - name: "weekly-checkin"
+      color: "0366d6"
+      description: "Weekly founder check-in"
+    - name: "yc-advice"
+      color: "ff6600"
+      description: "Automated YC-style advice"
+    - name: "demo-day-prep"
+      color: "6f42c1"
+      description: "Demo day preparation tasks"
+    - name: "metrics"
+      color: "28a745"
+      description: "Metrics and analytics"
+    - name: "user-feedback"
+      color: "fbca04"
+      description: "Feedback from users"
+    - name: "critical"
+      color: "d73a4a"
+      description: "Critical issue requiring immediate attention"

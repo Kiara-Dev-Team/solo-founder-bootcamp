@@ -1,0 +1,328 @@
+name: YC Partner Advice
+
+# Provides automated guidance based on repository activity and patterns
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+  issues:
+    types: [opened, labeled]
+  workflow_dispatch:
+    inputs:
+      advice_type:
+        description: 'Type of advice needed'
+        required: false
+        default: 'general'
+        type: choice
+        options:
+          - general
+          - product
+          - growth
+          - technical
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  analyze-and-advise:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 100  # Get recent history for analysis
+
+      - name: Analyze repository activity
+        id: analyze
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Calculate time periods
+            const now = new Date();
+            const oneWeekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+            const twoWeeksAgo = new Date(now - 14 * 24 * 60 * 60 * 1000);
+            
+            // Get commits from last week
+            const commits = await github.rest.repos.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              since: oneWeekAgo.toISOString(),
+              per_page: 100
+            });
+            
+            // Get PRs
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 50
+            });
+            
+            // Get issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              since: twoWeeksAgo.toISOString(),
+              per_page: 100
+            });
+            
+            // Check for METRICS.md
+            let hasMetrics = false;
+            let metricsContent = '';
+            try {
+              const metrics = await github.rest.repos.getContent({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                path: 'METRICS.md'
+              });
+              hasMetrics = true;
+              metricsContent = Buffer.from(metrics.data.content, 'base64').toString();
+            } catch (e) {
+              console.log('No METRICS.md found');
+            }
+            
+            // Analysis metrics
+            const weeklyCommits = commits.data.length;
+            const openPRs = prs.data.filter(pr => pr.state === 'open').length;
+            const mergedPRsThisWeek = prs.data.filter(pr => 
+              pr.merged_at && new Date(pr.merged_at) > oneWeekAgo
+            ).length;
+            
+            const userIssues = issues.data.filter(issue => 
+              !issue.pull_request && 
+              (issue.labels.some(l => l.name.includes('user')) || 
+               issue.labels.some(l => l.name.includes('feedback')))
+            ).length;
+            
+            const weeklyCheckins = issues.data.filter(issue =>
+              issue.labels.some(l => l.name === 'weekly-checkin')
+            ).length;
+            
+            // Store analysis results
+            core.setOutput('weekly_commits', weeklyCommits);
+            core.setOutput('merged_prs', mergedPRsThisWeek);
+            core.setOutput('open_prs', openPRs);
+            core.setOutput('user_issues', userIssues);
+            core.setOutput('weekly_checkins', weeklyCheckins);
+            core.setOutput('has_metrics', hasMetrics);
+            
+            return {
+              weeklyCommits,
+              mergedPRsThisWeek,
+              openPRs,
+              userIssues,
+              weeklyCheckins,
+              hasMetrics
+            };
+
+      - name: Generate advice
+        id: advice
+        uses: actions/github-script@v7
+        env:
+          WEEKLY_COMMITS: ${{ steps.analyze.outputs.weekly_commits }}
+          MERGED_PRS: ${{ steps.analyze.outputs.merged_prs }}
+          OPEN_PRS: ${{ steps.analyze.outputs.open_prs }}
+          USER_ISSUES: ${{ steps.analyze.outputs.user_issues }}
+          WEEKLY_CHECKINS: ${{ steps.analyze.outputs.weekly_checkins }}
+          HAS_METRICS: ${{ steps.analyze.outputs.has_metrics }}
+        with:
+          script: |
+            const weeklyCommits = parseInt(process.env.WEEKLY_COMMITS);
+            const mergedPRs = parseInt(process.env.MERGED_PRS);
+            const openPRs = parseInt(process.env.OPEN_PRS);
+            const userIssues = parseInt(process.env.USER_ISSUES);
+            const weeklyCheckins = parseInt(process.env.WEEKLY_CHECKINS);
+            const hasMetrics = process.env.HAS_METRICS === 'true';
+            
+            let advice = [];
+            let priority = 'info';
+            
+            // Shipping velocity advice
+            if (weeklyCommits < 5) {
+              advice.push({
+                area: 'Shipping Velocity',
+                message: '⚠️  Low shipping velocity detected. YC partners would say: "Ship faster! Aim for daily deploys."',
+                action: 'Increase commit frequency. Break work into smaller, shippable pieces.',
+                priority: 'high'
+              });
+              priority = 'high';
+            } else if (weeklyCommits > 30) {
+              advice.push({
+                area: 'Shipping Velocity',
+                message: '🚀 Excellent shipping velocity! You\'re moving fast.',
+                action: 'Keep this pace. Make sure you\'re also talking to users.',
+                priority: 'info'
+              });
+            }
+            
+            // User feedback advice
+            if (userIssues < 3) {
+              advice.push({
+                area: 'User Feedback',
+                message: '🚨 Not enough user feedback tracked. YC motto: "Make something people want" - but you need to talk to people first!',
+                action: 'Create issues for user conversations. Label them "user-feedback". Aim for 5+ conversations per week.',
+                priority: 'critical'
+              });
+              priority = priority === 'high' ? 'high' : 'critical';
+            }
+            
+            // Metrics tracking advice
+            if (!hasMetrics) {
+              advice.push({
+                area: 'Metrics',
+                message: '📊 No METRICS.md found. You can\'t improve what you don\'t measure.',
+                action: 'Create a METRICS.md file to track: users, revenue, growth rate, and your key metric.',
+                priority: 'high'
+              });
+              priority = priority === 'critical' ? 'critical' : 'high';
+            }
+            
+            // Weekly check-in advice
+            if (weeklyCheckins === 0) {
+              advice.push({
+                area: 'Accountability',
+                message: '📅 No weekly check-ins completed. Structure keeps you focused.',
+                action: 'Complete your weekly check-ins. They help track progress and identify blockers.',
+                priority: 'medium'
+              });
+            }
+            
+            // PR management advice
+            if (openPRs > 5) {
+              advice.push({
+                area: 'Process',
+                message: '⚠️  Many open PRs. Don\'t let work pile up.',
+                action: 'Review and merge or close PRs. Keep work flowing.',
+                priority: 'medium'
+              });
+            }
+            
+            // General advice
+            if (advice.length === 0) {
+              advice.push({
+                area: 'General',
+                message: '✅ Looking good! Keep up the momentum.',
+                action: 'Continue shipping, talking to users, and tracking metrics.',
+                priority: 'info'
+              });
+            }
+            
+            core.setOutput('advice_json', JSON.stringify(advice));
+            core.setOutput('priority', priority);
+            
+            return advice;
+
+      - name: Create or update advice issue
+        if: steps.advice.outputs.priority != 'info'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const advice = JSON.parse('${{ steps.advice.outputs.advice_json }}');
+            const priority = '${{ steps.advice.outputs.priority }}';
+            
+            // Format advice into issue body
+            let body = `## 💡 YC Partner Advice\n\n`;
+            body += `**Priority Level:** ${priority.toUpperCase()}\n\n`;
+            body += `Based on your recent activity, here's advice a YC partner might give:\n\n`;
+            
+            advice.forEach((item, index) => {
+              const emoji = item.priority === 'critical' ? '🚨' : 
+                           item.priority === 'high' ? '⚠️' : 
+                           item.priority === 'medium' ? '📋' : 'ℹ️';
+              
+              body += `### ${emoji} ${item.area}\n\n`;
+              body += `${item.message}\n\n`;
+              body += `**Action:** ${item.action}\n\n`;
+              body += `---\n\n`;
+            });
+            
+            body += `### 📚 YC Resources\n\n`;
+            body += `- [Do Things That Don't Scale](http://www.paulgraham.com/ds.html)\n`;
+            body += `- [Talk to Users](https://www.ycombinator.com/library/6g-talk-to-users)\n`;
+            body += `- [Startup = Growth](http://www.paulgraham.com/growth.html)\n\n`;
+            
+            body += `---\n\n`;
+            body += `*This is automated advice based on repository analysis. Use your judgment!*\n\n`;
+            body += `**Close this issue when you've addressed the recommendations.**`;
+            
+            // Check if there's already an open advice issue
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'yc-advice',
+              per_page: 1
+            });
+            
+            if (existingIssues.data.length > 0) {
+              // Update existing issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues.data[0].number,
+                body: body
+              });
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues.data[0].number,
+                body: '🔄 Advice updated based on latest activity.'
+              });
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '💡 YC Partner Advice - Action Required',
+                body: body,
+                labels: ['yc-advice', 'automation', priority]
+              });
+            }
+
+      - name: Comment on PR if triggered by PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const advice = JSON.parse('${{ steps.advice.outputs.advice_json }}');
+            
+            let comment = `## 🤖 Automated YC Partner Review\n\n`;
+            
+            // Add specific PR advice
+            comment += `Thanks for the PR! Here's some automated feedback:\n\n`;
+            
+            // Check PR size
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            if (pr.data.additions + pr.data.deletions > 500) {
+              comment += `⚠️  **Large PR:** This PR changes ${pr.data.additions + pr.data.deletions} lines. `;
+              comment += `Consider breaking into smaller PRs for easier review and faster iteration.\n\n`;
+            }
+            
+            if (pr.data.changed_files > 10) {
+              comment += `⚠️  **Many files changed:** ${pr.data.changed_files} files modified. `;
+              comment += `Keep changes focused for faster shipping.\n\n`;
+            }
+            
+            comment += `**General advice:**\n`;
+            advice.slice(0, 2).forEach(item => {
+              comment += `- ${item.message}\n`;
+            });
+            
+            comment += `\n*Keep shipping! 🚀*`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });

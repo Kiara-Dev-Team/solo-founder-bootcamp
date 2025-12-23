@@ -1,0 +1,260 @@
+name: YC Demo Day Prep
+
+# Tracks milestone progress and helps prepare for launches/demo days
+on:
+  schedule:
+    - cron: '0 10 * * 1'  # Every Monday at 10 AM UTC
+  workflow_dispatch:
+    inputs:
+      demo_date:
+        description: 'Target demo/launch date (YYYY-MM-DD)'
+        required: false
+        type: string
+      weeks_until:
+        description: 'Weeks until demo day'
+        required: false
+        type: string
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  demo-day-prep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Calculate demo day info
+        id: demo_info
+        run: |
+          # Check if DEMO_DAY_CONFIG exists
+          if [ -f ".github/demo-day-config.yml" ]; then
+            echo "has_config=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_config=false" >> $GITHUB_OUTPUT
+            # Default to 12 weeks out
+            target_date=$(date -d "+12 weeks" +%Y-%m-%d)
+            echo "target_date=$target_date" >> $GITHUB_OUTPUT
+            echo "weeks_until=12" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check milestone progress
+        id: milestone_check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get all milestones
+            const milestones = await github.rest.issues.listMilestones({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all'
+            });
+            
+            let demoMilestone = milestones.data.find(m => 
+              m.title.toLowerCase().includes('demo') || 
+              m.title.toLowerCase().includes('launch')
+            );
+            
+            if (!demoMilestone) {
+              core.setOutput('has_milestone', 'false');
+              return {};
+            }
+            
+            core.setOutput('has_milestone', 'true');
+            core.setOutput('milestone_number', demoMilestone.number);
+            core.setOutput('milestone_title', demoMilestone.title);
+            
+            // Get issues for this milestone
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              milestone: demoMilestone.number,
+              state: 'all'
+            });
+            
+            const total = issues.data.length;
+            const closed = issues.data.filter(i => i.state === 'closed').length;
+            const progress = total > 0 ? Math.round((closed / total) * 100) : 0;
+            
+            core.setOutput('total_tasks', total);
+            core.setOutput('completed_tasks', closed);
+            core.setOutput('progress_percent', progress);
+            
+            return {
+              total,
+              closed,
+              progress
+            };
+
+      - name: Create demo day prep checklist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const hasMilestone = '${{ steps.milestone_check.outputs.has_milestone }}' === 'true';
+            const weeksUntil = '${{ github.event.inputs.weeks_until }}' || '12';
+            const targetDate = '${{ github.event.inputs.demo_date }}' || '${{ steps.demo_info.outputs.target_date }}';
+            
+            let body = `## 🎯 Demo Day / Launch Preparation\n\n`;
+            
+            if (targetDate) {
+              body += `**Target Date:** ${targetDate}\n`;
+              body += `**Weeks Until Launch:** ~${weeksUntil}\n\n`;
+            }
+            
+            if (hasMilestone) {
+              const progress = '${{ steps.milestone_check.outputs.progress_percent }}';
+              const completed = '${{ steps.milestone_check.outputs.completed_tasks }}';
+              const total = '${{ steps.milestone_check.outputs.total_tasks }}';
+              const milestoneTitle = '${{ steps.milestone_check.outputs.milestone_title }}';
+              
+              body += `### 📊 Milestone Progress: ${milestoneTitle}\n\n`;
+              body += `Progress: ${progress}% (${completed}/${total} tasks completed)\n\n`;
+              body += `\`\`\`\n[${'='.repeat(Math.floor(progress/2))}${' '.repeat(50-Math.floor(progress/2))}] ${progress}%\n\`\`\`\n\n`;
+            }
+            
+            body += `### ✅ Demo Day Preparation Checklist\n\n`;
+            body += `#### Product\n`;
+            body += `- [ ] Core product working and stable\n`;
+            body += `- [ ] Demo flow polished and rehearsed\n`;
+            body += `- [ ] Key features ready to showcase\n`;
+            body += `- [ ] Product demo video recorded (2min)\n`;
+            body += `- [ ] Screenshots and assets prepared\n\n`;
+            
+            body += `#### Metrics & Data\n`;
+            body += `- [ ] Key metrics dashboard ready\n`;
+            body += `- [ ] Growth numbers documented\n`;
+            body += `- [ ] User testimonials collected (3+)\n`;
+            body += `- [ ] Analytics properly configured\n`;
+            body += `- [ ] Conversion funnel tracked\n\n`;
+            
+            body += `#### Pitch & Presentation\n`;
+            body += `- [ ] Pitch deck created (10-15 slides max)\n`;
+            body += `- [ ] 2-minute pitch practiced and timed\n`;
+            body += `- [ ] One-liner perfected\n`;
+            body += `- [ ] Problem clearly articulated\n`;
+            body += `- [ ] Solution simply explained\n`;
+            body += `- [ ] Traction/proof points ready\n\n`;
+            
+            body += `#### Online Presence\n`;
+            body += `- [ ] Website landing page live\n`;
+            body += `- [ ] Clear value proposition on homepage\n`;
+            body += `- [ ] Sign-up or demo flow working\n`;
+            body += `- [ ] Social media profiles set up\n`;
+            body += `- [ ] Contact information visible\n\n`;
+            
+            body += `#### Marketing & Launch\n`;
+            body += `- [ ] Launch plan documented\n`;
+            body += `- [ ] Press kit prepared\n`;
+            body += `- [ ] Launch announcement drafted\n`;
+            body += `- [ ] Email to warm leads ready\n`;
+            body += `- [ ] Product Hunt / HN launch planned\n\n`;
+            
+            body += `#### Technical\n`;
+            body += `- [ ] Infrastructure stable and scaled\n`;
+            body += `- [ ] Monitoring and alerts configured\n`;
+            body += `- [ ] Backup and recovery tested\n`;
+            body += `- [ ] Security basics covered\n`;
+            body += `- [ ] Performance optimized\n\n`;
+            
+            body += `#### Business\n`;
+            body += `- [ ] Pricing model finalized\n`;
+            body += `- [ ] Payment processing working\n`;
+            body += `- [ ] Terms of service / privacy policy\n`;
+            body += `- [ ] Customer support plan ready\n`;
+            body += `- [ ] Founder bios written\n\n`;
+            
+            body += `### 📚 YC Demo Day Resources\n\n`;
+            body += `- [How to Design a Better Pitch Deck](https://www.ycombinator.com/library/4T-how-to-design-a-better-pitch-deck)\n`;
+            body += `- [How to Pitch Your Company](https://www.ycombinator.com/library/6q-how-to-pitch-your-company)\n`;
+            body += `- [Demo Day Advice](https://www.ycombinator.com/demoday)\n\n`;
+            
+            body += `### 🎯 This Week's Focus\n\n`;
+            
+            const weeksNum = parseInt(weeksUntil);
+            if (weeksNum > 8) {
+              body += `**Phase: Foundation Building**\n\n`;
+              body += `Focus on:\n`;
+              body += `- Product stability and core features\n`;
+              body += `- Early user feedback and iterations\n`;
+              body += `- Metrics tracking setup\n`;
+            } else if (weeksNum > 4) {
+              body += `**Phase: Polish & Practice**\n\n`;
+              body += `Focus on:\n`;
+              body += `- Demo preparation and practice\n`;
+              body += `- Pitch deck creation\n`;
+              body += `- Testimonial collection\n`;
+            } else if (weeksNum > 1) {
+              body += `**Phase: Final Sprint**\n\n`;
+              body += `Focus on:\n`;
+              body += `- Launch plan execution\n`;
+              body += `- Final testing and QA\n`;
+              body += `- Marketing materials ready\n`;
+            } else {
+              body += `**Phase: LAUNCH WEEK!** 🚀\n\n`;
+              body += `Focus on:\n`;
+              body += `- Final rehearsals\n`;
+              body += `- Monitoring and support\n`;
+              body += `- Launch execution\n`;
+            }
+            
+            body += `\n---\n\n`;
+            body += `*Update this checklist weekly. Close items as you complete them.*\n\n`;
+            body += `**Remember:** Don't try to be perfect. Ship something good enough and iterate! 🚀`;
+            
+            // Check if there's already an open demo day issue
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'demo-day-prep',
+              per_page: 1
+            });
+            
+            if (existingIssues.data.length > 0) {
+              // Update existing issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues.data[0].number,
+                body: body
+              });
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues.data[0].number,
+                body: `🔄 Demo Day prep checklist updated for week ${Math.max(0, 12 - parseInt(weeksUntil))}/12`
+              });
+              
+              console.log('Updated existing demo day prep issue');
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🎯 Demo Day / Launch Preparation',
+                body: body,
+                labels: ['demo-day-prep', 'automation', 'milestone']
+              });
+              
+              console.log('Created new demo day prep issue');
+            }
+
+      - name: Create milestone if needed
+        if: steps.milestone_check.outputs.has_milestone != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const targetDate = '${{ github.event.inputs.demo_date }}' || '${{ steps.demo_info.outputs.target_date }}';
+            
+            await github.rest.issues.createMilestone({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Launch / Demo Day',
+              description: `Target launch date: ${targetDate}. Track all critical tasks here.`,
+              due_on: targetDate ? new Date(targetDate).toISOString() : undefined
+            });
+            
+            console.log('Created launch milestone');

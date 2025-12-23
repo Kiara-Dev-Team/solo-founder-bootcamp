@@ -23,6 +23,12 @@
   * [Events & Programs](community.md#events-and-programs)
   * [Open Source Projects](community.md#open-source-projects)
 
+* **🤖 Automation**
+  * [YC Partner Automation](automation.md#overview)
+  * [Quick Start Guide](automation.md#quick-start-guide)
+  * [Workflow Details](automation.md#workflow-details)
+  * [Integration Patterns](automation.md#integration-patterns)
+
 * **About**
   * [Contributing](contributing.md)
   * [License](license.md)
