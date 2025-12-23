@@ -1,0 +1,309 @@
+name: YC Metrics Tracking
+
+# Monitors key startup metrics and alerts on important changes
+on:
+  schedule:
+    - cron: '0 17 * * 5'  # Every Friday at 5 PM UTC
+  push:
+    paths:
+      - 'METRICS.md'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  track-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 10  # Get recent history
+
+      - name: Read current metrics
+        id: current_metrics
+        run: |
+          if [ ! -f "METRICS.md" ]; then
+            echo "metrics_exist=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "metrics_exist=true" >> $GITHUB_OUTPUT
+          
+          # Extract metrics using grep
+          wau=$(grep -i "WAU:" METRICS.md | head -1 | grep -oP '\d+' | head -1 || echo "0")
+          mrr=$(grep -i "MRR:" METRICS.md | head -1 | grep -oP '\d+' | head -1 || echo "0")
+          
+          echo "wau=$wau" >> $GITHUB_OUTPUT
+          echo "mrr=$mrr" >> $GITHUB_OUTPUT
+
+      - name: Get historical metrics
+        id: historical
+        if: steps.current_metrics.outputs.metrics_exist == 'true'
+        run: |
+          # Try to get metrics from previous week
+          git log -2 --all --pretty=format:"%H" -- METRICS.md > commits.txt
+          
+          if [ $(wc -l < commits.txt) -ge 2 ]; then
+            prev_commit=$(sed -n '2p' commits.txt)
+            prev_wau=$(git show $prev_commit:METRICS.md 2>/dev/null | grep -i "WAU:" | head -1 | grep -oP '\d+' | head -1 || echo "0")
+            prev_mrr=$(git show $prev_commit:METRICS.md 2>/dev/null | grep -i "MRR:" | head -1 | grep -oP '\d+' | head -1 || echo "0")
+            
+            echo "prev_wau=$prev_wau" >> $GITHUB_OUTPUT
+            echo "prev_mrr=$prev_mrr" >> $GITHUB_OUTPUT
+            echo "has_history=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_history=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Analyze metrics and generate insights
+        if: steps.current_metrics.outputs.metrics_exist == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const currentWAU = parseInt('${{ steps.current_metrics.outputs.wau }}');
+            const currentMRR = parseInt('${{ steps.current_metrics.outputs.mrr }}');
+            const hasHistory = '${{ steps.historical.outputs.has_history }}' === 'true';
+            
+            let insights = [];
+            let alerts = [];
+            
+            if (hasHistory) {
+              const prevWAU = parseInt('${{ steps.historical.outputs.prev_wau }}');
+              const prevMRR = parseInt('${{ steps.historical.outputs.prev_mrr }}');
+              
+              // Calculate growth rates
+              const wauGrowth = prevWAU > 0 ? ((currentWAU - prevWAU) / prevWAU * 100).toFixed(1) : 0;
+              const mrrGrowth = prevMRR > 0 ? ((currentMRR - prevMRR) / prevMRR * 100).toFixed(1) : 0;
+              
+              // Analyze growth
+              if (wauGrowth < 0) {
+                alerts.push({
+                  type: 'critical',
+                  metric: 'WAU',
+                  message: `🚨 User growth is negative (${wauGrowth}%). This is critical!`,
+                  action: 'Talk to churning users immediately. Find out why they left.'
+                });
+              } else if (wauGrowth < 5) {
+                alerts.push({
+                  type: 'warning',
+                  metric: 'WAU',
+                  message: `⚠️  User growth is slow (${wauGrowth}%). YC expects 5-7% weekly growth.`,
+                  action: 'Try new acquisition channels. Improve onboarding. Talk to users.'
+                });
+              } else if (wauGrowth > 20) {
+                insights.push({
+                  type: 'positive',
+                  metric: 'WAU',
+                  message: `🚀 Excellent user growth (${wauGrowth}%)! You might have product-market fit.`,
+                  action: 'Document what\'s working. Double down on growth channels that work.'
+                });
+              }
+              
+              if (mrrGrowth < 0) {
+                alerts.push({
+                  type: 'critical',
+                  metric: 'MRR',
+                  message: `🚨 Revenue declining (${mrrGrowth}%). Critical issue!`,
+                  action: 'Focus on retention. Talk to customers who downgraded or churned.'
+                });
+              } else if (mrrGrowth > 15) {
+                insights.push({
+                  type: 'positive',
+                  metric: 'MRR',
+                  message: `💰 Strong revenue growth (${mrrGrowth}%)!`,
+                  action: 'Keep doing what\'s working. Consider raising prices if demand is high.'
+                });
+              }
+            }
+            
+            // General metrics advice
+            if (currentWAU < 100) {
+              insights.push({
+                type: 'info',
+                metric: 'Scale',
+                message: '📊 Still in early stage (< 100 WAU)',
+                action: 'Focus on manual outreach. Do things that don\'t scale. Talk to every user.'
+              });
+            } else if (currentWAU > 1000) {
+              insights.push({
+                type: 'positive',
+                metric: 'Scale',
+                message: '🎯 Reaching scale (1000+ WAU)!',
+                action: 'Start thinking about scaling infrastructure and team.'
+              });
+            }
+            
+            core.setOutput('insights_json', JSON.stringify(insights));
+            core.setOutput('alerts_json', JSON.stringify(alerts));
+            core.setOutput('has_alerts', alerts.length > 0 ? 'true' : 'false');
+
+      - name: Create metrics report
+        if: steps.current_metrics.outputs.metrics_exist == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const insights = JSON.parse('${{ steps.analyze_metrics.outputs.insights_json }}' || '[]');
+            const alerts = JSON.parse('${{ steps.analyze_metrics.outputs.alerts_json }}' || '[]');
+            const hasHistory = '${{ steps.historical.outputs.has_history }}' === 'true';
+            
+            let body = `## 📊 Weekly Metrics Report\n\n`;
+            body += `**Date:** ${new Date().toISOString().split('T')[0]}\n\n`;
+            
+            // Current metrics
+            body += `### Current Metrics\n\n`;
+            body += `- **Weekly Active Users:** ${{ steps.current_metrics.outputs.wau }}\n`;
+            body += `- **Monthly Recurring Revenue:** ${{ steps.current_metrics.outputs.mrr }}\n\n`;
+            
+            // Growth rates if available
+            if (hasHistory) {
+              const currentWAU = parseInt('${{ steps.current_metrics.outputs.wau }}');
+              const currentMRR = parseInt('${{ steps.current_metrics.outputs.mrr }}');
+              const prevWAU = parseInt('${{ steps.historical.outputs.prev_wau }}');
+              const prevMRR = parseInt('${{ steps.historical.outputs.prev_mrr }}');
+              
+              const wauGrowth = prevWAU > 0 ? ((currentWAU - prevWAU) / prevWAU * 100).toFixed(1) : 0;
+              const mrrGrowth = prevMRR > 0 ? ((currentMRR - prevMRR) / prevMRR * 100).toFixed(1) : 0;
+              
+              body += `### Week-over-Week Growth\n\n`;
+              body += `- **User Growth:** ${wauGrowth}% (${currentWAU - prevWAU} new users)\n`;
+              body += `- **Revenue Growth:** ${mrrGrowth}% ($${currentMRR - prevMRR})\n\n`;
+            }
+            
+            // Alerts
+            if (alerts.length > 0) {
+              body += `### 🚨 Alerts\n\n`;
+              alerts.forEach(alert => {
+                body += `#### ${alert.message}\n`;
+                body += `**Action Required:** ${alert.action}\n\n`;
+              });
+            }
+            
+            // Insights
+            if (insights.length > 0) {
+              body += `### 💡 Insights\n\n`;
+              insights.forEach(insight => {
+                body += `${insight.message}\n`;
+                body += `**Recommendation:** ${insight.action}\n\n`;
+              });
+            }
+            
+            // YC benchmarks
+            body += `### 📈 YC Benchmarks\n\n`;
+            body += `**Good Growth Rates:**\n`;
+            body += `- Weekly user growth: 5-7%\n`;
+            body += `- Monthly revenue growth: 15-20%\n`;
+            body += `- Product-market fit signal: 20%+ weekly growth\n\n`;
+            
+            body += `**Remember:**\n`;
+            body += `- Growth solves most problems\n`;
+            body += `- Talk to users to understand what drives growth\n`;
+            body += `- Focus on one metric that matters most\n\n`;
+            
+            body += `---\n\n`;
+            body += `*Update METRICS.md weekly to track progress automatically.*`;
+            
+            // Create comment on latest weekly check-in or create new issue
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'weekly-checkin',
+              per_page: 1,
+              sort: 'created',
+              direction: 'desc'
+            });
+            
+            if (issues.data.length > 0) {
+              // Add as comment to latest check-in
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues.data[0].number,
+                body: body
+              });
+            } else {
+              // Create standalone metrics report
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `📊 Weekly Metrics Report - ${new Date().toISOString().split('T')[0]}`,
+                body: body,
+                labels: ['metrics', 'automation']
+              });
+            }
+
+      - name: Create METRICS.md template if missing
+        if: steps.current_metrics.outputs.metrics_exist != 'true'
+        run: |
+          cat > METRICS.md << 'EOF'
+          # Startup Metrics
+
+          ## Current Week
+
+          - **WAU (Weekly Active Users):** 0
+          - **MRR (Monthly Recurring Revenue):** $0
+          - **Growth Rate:** 0%
+          - **Deployments:** 0
+          - **Customer Conversations:** 0
+
+          ## Key Metric
+
+          <!-- Choose ONE metric that matters most for your stage -->
+          - **[Your Key Metric]:** 
+
+          ## Goals
+
+          <!-- Set specific, measurable goals -->
+          - [ ] Reach 100 WAU by end of month
+          - [ ] Close 3 paying customers
+          - [ ] Ship feature X
+
+          ## Notes
+
+          <!-- What's driving growth? What's holding you back? -->
+
+          ---
+
+          **How to use this file:**
+          1. Update metrics weekly (every Friday)
+          2. Commit changes to track history
+          3. Automated workflows will analyze trends
+          4. Focus on one metric that matters most
+          EOF
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add METRICS.md
+          git commit -m "Add METRICS.md template for tracking"
+          git push
+
+      - name: Send alert if critical
+        if: steps.current_metrics.outputs.metrics_exist == 'true' && steps.analyze_metrics.outputs.has_alerts == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const alerts = JSON.parse('${{ steps.analyze_metrics.outputs.alerts_json }}');
+            const criticalAlerts = alerts.filter(a => a.type === 'critical');
+            
+            if (criticalAlerts.length > 0) {
+              let body = `## 🚨 Critical Metrics Alert\n\n`;
+              body += `Your metrics need immediate attention:\n\n`;
+              
+              criticalAlerts.forEach(alert => {
+                body += `### ${alert.metric}: ${alert.message}\n`;
+                body += `**Action:** ${alert.action}\n\n`;
+              });
+              
+              body += `**This is urgent. Address these issues before your next weekly check-in.**`;
+              
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚨 Critical Metrics Alert - Immediate Action Required',
+                body: body,
+                labels: ['critical', 'metrics', 'automation']
+              });
+            }
