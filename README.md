@@ -7,6 +7,14 @@
 
 Y Combinator is the world's most successful startup accelerator. Since 2005, YC has funded over 4,000 companies with a combined valuation of over $600 billion. This list compiles the best resources, companies, and knowledge about YC.
 
+## 🤖 NEW: YC Partner Automation
+
+**Automate the YC experience for your startup!** Get weekly check-ins, automated advice, and milestone tracking integrated with your Git workflow.
+
+👉 **[Get Started with Automation](automation.md)** | **[See Examples](automation-examples.md)**
+
+Perfect for solo founders and small teams who want YC-style accountability without being in YC.
+
 ## 📖 View the Beautiful Website
 
 Visit the interactive website: **[View Site](https://kiara-dev-team.github.io/awesome-y-combinator/)**

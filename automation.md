@@ -75,7 +75,29 @@ Tracks key startup metrics and alerts you to important changes.
 
 ## Quick Start Guide
 
-### Step 1: Add Workflows to Your Repository
+### Option 1: Automated Installation (Recommended)
+
+Use our installation script:
+
+```bash
+# Run the installation script directly
+curl -sL https://raw.githubusercontent.com/Kiara-Dev-Team/awesome-y-combinator/main/.github/workflows/yc-automation/install.sh | bash
+
+# Or download and run manually
+curl -sL https://raw.githubusercontent.com/Kiara-Dev-Team/awesome-y-combinator/main/.github/workflows/yc-automation/install.sh -o install-yc.sh
+chmod +x install-yc.sh
+./install-yc.sh
+```
+
+The script will:
+- ✅ Let you choose which workflows to install
+- ✅ Create necessary directories
+- ✅ Download workflow files
+- ✅ Set up issue templates
+- ✅ Create METRICS.md template
+- ✅ Provide next steps
+
+### Option 2: Manual Installation
 
 Copy the workflow files from this repository to your private repo:
 
@@ -480,6 +502,10 @@ A: Yes! Runs entirely in your private repository. No external services required.
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Workflow Syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
 - [Reusable Workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows)
+
+### More Examples
+- [Integration Examples](automation-examples.md) - Real-world usage patterns
+- [Workflow README](.github/workflows/yc-automation/README.md) - Technical details
 
 ### Community
 - Share your setup in [Discussions](#)

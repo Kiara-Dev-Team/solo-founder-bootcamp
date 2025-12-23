@@ -27,7 +27,8 @@
   * [YC Partner Automation](automation.md#overview)
   * [Quick Start Guide](automation.md#quick-start-guide)
   * [Workflow Details](automation.md#workflow-details)
-  * [Integration Patterns](automation.md#integration-patterns)
+  * [Integration Examples](automation-examples.md)
+  * [Best Practices](automation.md#best-practices)
 
 * **About**
   * [Contributing](contributing.md)
