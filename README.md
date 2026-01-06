@@ -1,117 +1,278 @@
-# Awesome Y Combinator [![Awesome](https://awesome.re/badge.svg)](https://awesome.re)
+# Solo Founder Bootcamp 🚀
 
-> A curated list of awesome Y Combinator companies, resources, articles, and knowledge.
+> **GitHub Actions workflows that bring Y Combinator's partner experience to solo founders—automated accountability, weekly check-ins, and startup wisdom right in your repository.**
 
-Y Combinator is the world's most successful startup accelerator. Since 2005, YC has funded over 4,000 companies with a combined valuation of over $600 billion. This list compiles the best resources, companies, and knowledge about YC.
+[![Awesome](https://awesome.re/badge.svg)](https://awesome.re)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://kiara-dev-team.github.io/solo-founder-bootcamp/)
 
-## Contents
+---
 
-- [Notable YC Companies](#notable-yc-companies)
-- [Essential Resources](#essential-resources)
-- [Startup Wisdom](#startup-wisdom)
-- [Application Tips](#application-tips)
-- [Community & Events](#community--events)
-- [Open Source Projects](#open-source-projects)
-- [Official Links](#official-links)
-- [Automation](#automation)
+## 🎯 What Is This? 
 
-## Notable YC Companies
+**Solo Founder Bootcamp** is a collection of automated GitHub Actions workflows that simulate the Y Combinator accelerator experience for solo founders and small teams who can't (or don't want to) go through YC. 
 
-### Unicorns & Decacorns
+Instead of paying for expensive coaches or accelerators, you get: 
 
-- [Airbnb](https://airbnb.com) - Online marketplace for lodging (W09) - $75B+ valuation.
-- [Stripe](https://stripe.com) - Online payment processing (S09) - $95B valuation.
-- [Coinbase](https://coinbase.com) - Cryptocurrency exchange (S12) - Public (COIN).
-- [DoorDash](https://doordash.com) - Food delivery platform (S13) - Public (DASH).
-- [Instacart](https://instacart.com) - Grocery delivery service (S12) - $39B valuation.
-- [Reddit](https://reddit.com) - Social news aggregation (S05) - Public (RDDT).
-- [Dropbox](https://dropbox.com) - Cloud storage (S07) - Public (DBX).
-- [Twitch](https://twitch.tv) - Live streaming platform (S07) - Acquired by Amazon for $970M.
+- ✅ **Weekly check-ins** (like YC's famous Tuesday dinners)
+- ✅ **Automated partner advice** based on your repo activity
+- ✅ **Metrics tracking** with growth alerts
+- ✅ **Demo day prep** checklists for launches
+- ✅ **Curated YC wisdom** from Paul Graham, Sam Altman, and other YC partners
 
-### Rising Stars
+Everything runs **privately in your GitHub repository** using GitHub Actions.  No external services.  No data leaves GitHub.
 
-- [Brex](https://brex.com) - Corporate credit cards (W17).
-- [Faire](https://faire.com) - Wholesale marketplace (W17).
-- [Rappi](https://rappi.com) - Latin American delivery app (W16).
-- [Ginkgo Bioworks](https://ginkgobioworks.com) - Synthetic biology (S14) - Public (DNA).
-- [GitLab](https://gitlab.com) - DevOps platform (W15) - Public (GTLB).
+---
 
-## Essential Resources
+## 🤔 Why Does This Exist?
 
-### Paul Graham's Essays
+### The Problem
 
-- [How to Start a Startup](http://www.paulgraham.com/start.html) - The foundational guide.
-- [Do Things That Don't Scale](http://www.paulgraham.com/ds.html) - Crucial early-stage advice.
-- [Maker's Schedule, Manager's Schedule](http://www.paulgraham.com/makersschedule.html) - Time management for makers.
-- [Black Swan Farming](http://www.paulgraham.com/swan.html) - YC's investment philosophy.
-- [How to Get Startup Ideas](http://www.paulgraham.com/startupideas.html) - Finding good startup ideas.
+Solo founders and small teams struggle with: 
 
-### YC Library
+- **Accountability** - No cofounders or mentors to keep you honest
+- **Focus** - Easy to get distracted without structure
+- **Metrics** - Not tracking the right numbers
+- **Advice overload** - Too many resources, not enough actionable guidance
+- **Isolation** - Building alone is hard
 
-- [YC Startup Library](https://www.ycombinator.com/library) - Official collection of startup advice.
-- [Startup School](https://www.startupschool.org/) - Free online course on starting a company.
-- [YC Blog](https://www.ycombinator.com/blog) - News and insights from YC.
+### The Solution
 
-### Videos & Talks
+Y Combinator solves this with: 
+- Weekly founder dinners (forced accountability)
+- Partner office hours (expert advice)
+- Batch community (peer support)
+- Demo Day (hard deadline)
 
-- [How to Start a Startup](https://startupclass.samaltman.com/) - CS183 Stanford course.
-- [YC YouTube Channel](https://www.youtube.com/ycombinator) - Talks and interviews.
-- [Startup School Videos](https://www.youtube.com/playlist?list=PLQ-uHSnFig5MiLRb-l6yiCBGyqfVyVf17) - Playlist of startup advice.
+**But you can't just "get into YC."** And even if you could, maybe you don't want to give up equity or move to SF.
 
-### Books
+**Solo Founder Bootcamp** brings the best parts of the YC experience to your GitHub workflow—**for free, automated, and on your terms.**
 
-- [Zero to One](https://www.zerotoonebook.com/) - By Peter Thiel - Building companies that create new things.
-- [The Lean Startup](http://theleanstartup.com/) - By Eric Ries - Validated learning approach.
-- [The Hard Thing About Hard Things](https://www.amazon.com/Hard-Thing-About-Things-Building/dp/0062273205) - By Ben Horowitz - Building a business.
-- [Founders at Work](https://www.amazon.com/Founders-Work-Stories-Startups-Early/dp/1430210788) - By Jessica Livingston - YC co-founder interviews founders.
+---
 
-## Startup Wisdom
+## 🛠️ How Does It Work?
 
-### Resources
+### 1. Copy Workflows to Your Repo
 
-- [Paul Graham's Essays](http://www.paulgraham.com/articles.html) - Collection of essays on startups, programming, and life.
-- [YC Startup Playbook](https://playbook.samaltman.com/) - Comprehensive guide by Sam Altman.
-- [YC Application Guide](https://www.ycombinator.com/apply/guide) - How to apply to YC.
-- [YC Interview Guide](https://www.ycombinator.com/interview) - Preparing for YC interviews.
+```bash
+# Clone this repository
+git clone https://github.com/Kiara-Dev-Team/solo-founder-bootcamp.git
 
-## Application Tips
+# Copy workflows to your startup repo
+cd your-startup-repo
+cp -r ../solo-founder-bootcamp/.github/workflows/yc-automation/*.yml .github/workflows/
 
-### Resources
+# Commit and push
+git add .github/workflows/
+git commit -m "Add Solo Founder Bootcamp workflows"
+git push
+```
 
-- [YC Application](https://www.ycombinator.com/apply) - Apply to Y Combinator.
-- [YC Companies](https://www.ycombinator.com/companies) - Directory of all YC-funded companies.
-- [Top Companies](https://www.ycombinator.com/topcompanies) - YC's most successful companies by valuation.
+### 2. Workflows Run Automatically
 
-## Community & Events
+Once installed, these workflows run on schedule:
 
-### Programs
+| Workflow | When | What It Does |
+|----------|------|--------------|
+| **Weekly Check-in** | Every Monday 9 AM | Creates structured check-in issue tracking progress, metrics, and blockers |
+| **Partner Advice** | On PRs, issues, or manual | Analyzes repo activity and provides YC-style advice |
+| **Metrics Tracking** | Every Friday 5 PM | Monitors your METRICS.md file and alerts on growth trends |
+| **Demo Day Prep** | Every Monday 10 AM | Creates launch checklist and tracks milestone progress |
 
-- [YC Batch Program](https://www.ycombinator.com/about) - The core 3-month accelerator.
-- [Work at a Startup](https://www.workatastartup.com/) - Job board for YC companies.
+### 3. You Stay Accountable
 
-### Community
+The workflows create GitHub issues automatically: 
 
-- [Hacker News](https://news.ycombinator.com/) - YC's community forum.
-- [Bookface](https://bookface.ycombinator.com/) - YC alumni network (YC alumni only).
+- Weekly check-in issues prompt you to review progress
+- Advice comments appear on PRs when you're moving too slow
+- Metrics alerts fire when growth stalls
+- Demo day checklists keep you on track for launch
 
-## Open Source Projects
+**It's like having a YC partner watching your repo.**
 
-- [PostHog](https://github.com/PostHog/posthog) - Product analytics (W20).
-- [Cal.com](https://github.com/calcom/cal.com) - Scheduling infrastructure (W21).
-- [Supabase](https://github.com/supabase/supabase) - Open source Firebase alternative (S20).
-- [Flagsmith](https://github.com/Flagsmith/flagsmith) - Feature flag management (W19).
+---
 
-## Official Links
+## 📚 What's Inside?
 
-- [Y Combinator](https://www.ycombinator.com/) - Official Y Combinator website.
-- [YC Twitter](https://twitter.com/ycombinator) - Official Twitter account.
-- [YC LinkedIn](https://www.linkedin.com/company/y-combinator/) - Official LinkedIn page.
+### Automation Workflows
 
-## Automation
+- [`weekly-checkin.yml`](.github/workflows/yc-automation/weekly-checkin.yml) - YC-style weekly founder check-ins
+- [`partner-advice.yml`](.github/workflows/yc-automation/partner-advice.yml) - Automated guidance based on repo patterns
+- [`metrics-tracking.yml`](.github/workflows/yc-automation/metrics-tracking.yml) - Growth monitoring and alerts
+- [`demo-day-prep.yml`](.github/workflows/yc-automation/demo-day-prep.yml) - Launch checklist generator
 
-- [YC Partner Automation](https://github.com/Kiara-Dev-Team/awesome-y-combinator/blob/main/automation.md) - Automate YC-style check-ins and advice for your startup.
-- [Automation Examples](https://github.com/Kiara-Dev-Team/awesome-y-combinator/blob/main/automation-examples.md) - See examples of automation in action.
+📖 **Full documentation:** [Automation README](.github/workflows/yc-automation/README.md)
 
-## Contributing
+### YC Knowledge Base
 
-Contributions are welcome! Please read the [contributing guidelines](contributing.md) first.
+Curated advice from Y Combinator partners: 
+
+- [Paul Graham's Do's and Don'ts](paul-graham-dos-donts.md)
+- [Sam Altman's Do's and Don'ts](sam-altman-dos-donts.md)
+- [Michael Seibel's Do's and Don'ts](michael-seibel-yc-dos-donts.md)
+- [Garry Tan's Do's and Don'ts](garry-tan-yc-dos-donts.md)
+- [YC Application Tips](application.md)
+- [Solo Founder Pain Points](solo-founder-pain-points.md)
+
+### Resources & Tools
+
+- [Notable YC Companies](companies.md) - Learn from the best
+- [YC Resources](resources.md) - Essays, videos, books
+- [Community & Events](community.md) - Where to find support
+- [SaaS Tools for Solo Founders](saas-tools-for-solo-founders.md)
+
+---
+
+## 🚀 Quick Start (5 Minutes)
+
+### Prerequisites
+
+- A GitHub repository (public or private)
+- GitHub Actions enabled
+- That's it! 
+
+### Setup
+
+**Step 1:** Copy workflows to your repo (see [How Does It Work?](#-how-does-it-work))
+
+**Step 2:** Create `METRICS.md` in your repo root: 
+
+```markdown
+# Startup Metrics
+
+## Current Week (2026-01-06)
+- **WAU:** 150 users
+- **MRR:** $2,500
+- **Growth Rate:** 10% WoW
+- **Deployments:** 5 this week
+```
+
+**Step 3:** Enable workflows in GitHub Actions tab
+
+**Step 4:** Manually trigger "Weekly Check-in" to test
+
+**Done!** Workflows will now run automatically. 
+
+---
+
+## 💡 Who Is This For? 
+
+✅ **Perfect for:**
+- Solo founders building alone
+- Small teams (2-3 people) without mentors
+- Bootstrapped startups needing structure
+- Pre-seed founders not ready for YC
+- Indie hackers wanting accountability
+
+❌ **Not for:**
+- Large teams with established processes
+- Companies with existing accelerator support
+- Projects that don't track metrics
+- People who won't honestly fill out check-ins
+
+---
+
+## 📊 Example Workflows in Action
+
+### Weekly Check-in Issue
+
+```markdown
+# Weekly Check-in - Week of January 6, 2026
+
+## Progress
+What did you ship this week? 
+
+## Metrics
+- Users: 150 (+12%)
+- Revenue: $2,500 MRR (+8%)
+- Growth: 10% WoW
+
+## User Conversations
+Who did you talk to?  What did you learn?
+
+## Blockers
+What's stopping you from moving faster? 
+
+## Next Week
+What's the ONE thing you'll ship? 
+```
+
+### Partner Advice Comment
+
+```markdown
+🤖 **YC Partner Advice**
+
+⚠️ **Low commit activity detected** (3 commits this week)
+
+YC advice: "The best founders ship constantly. Aim for daily progress."
+
+📚 Read: [Do Things That Don't Scale](http://www.paulgraham.com/ds.html)
+
+**Suggestion:** Set a goal to commit at least once per day, even small changes.
+```
+
+### Metrics Alert
+
+```markdown
+🚨 **CRITICAL: Negative growth detected**
+
+Your weekly active users decreased by -5% this week.
+
+**Action required:**
+1. Talk to 10 users TODAY
+2. Find out why they're churning
+3. Fix the top issue this week
+
+Remember: "The only thing that matters is growth" - Paul Graham
+```
+
+---
+
+## 🎓 Learn More
+
+- **[Full Documentation](https://kiara-dev-team.github.io/solo-founder-bootcamp/)** - Complete guide
+- **[Automation Examples](automation-examples.md)** - See workflows in action
+- **[Setup Guide](SETUP.md)** - Detailed installation
+- **[Architecture](ARCHITECTURE.md)** - How it works internally
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+**Ideas for new workflows:**
+- Investor update generator
+- Customer health scoring
+- Competitive analysis tracker
+- Team velocity dashboard
+
+---
+
+## 📄 License
+
+[Apache License 2.0](LICENSE) - Free to use, modify, and distribute. 
+
+---
+
+## 🙏 Credits
+
+Built by the **[Kiara Dev Team](https://github.com/Kiara-Dev-Team)** for solo founders everywhere. 
+
+Inspired by Y Combinator's incredible track record of helping founders succeed.
+
+**Not affiliated with Y Combinator.** We just think their advice is really good.
+
+---
+
+## ⭐ Star This Repo
+
+If this helps you build your startup, give us a star! ⭐
+
+It helps other solo founders find this project. 
+
+---
+
+**Remember:** These workflows are tools to help you stay accountable and focused. They don't replace talking to users, shipping code, or doing the hard work of building a startup.
+
+**Make something people want! 🚀**
