@@ -120,7 +120,7 @@ All open-source technologies:
 ```bash
 npm install -g docsify-cli
 docsify serve .
-# Open http://localhost:3000
+# Open http://localhost:3000 in your browser
 ```
 
 ## ✅ Requirements Met

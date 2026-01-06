@@ -62,7 +62,7 @@ npm install -g docsify-cli
 # Serve the site locally
 docsify serve .
 
-# Open http://localhost:3000
+# Open http://localhost:3000 in your browser
 ```
 
 Changes to markdown files are reflected immediately - just refresh your browser!
